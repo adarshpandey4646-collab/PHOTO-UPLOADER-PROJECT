@@ -1,0 +1,250 @@
+High-Level Architecture
+Frontend (Next.js / React)
+        |
+        | Image Upload (child photo)
+        v
+Backend API (FastAPI)
+        |
+        | Face Detection + Preprocessing
+        v
+AI Personalisation Pipeline
+        |
+        | Stylised Face Generation
+        | Identity Preservation
+        v
+Image Composition Engine
+        |
+        v
+Final Personalised Illustration
+
+1. Upload System (Frontend)
+Tech Choice
+
+Next.js (React)
+
+What It Does
+
+Simple UI with:
+
+Image upload input
+
+Preview of uploaded photo
+
+“Generate Illustration” button
+
+Sends the image to backend via multipart/form-data
+
+Displays the final personalised illustration once ready
+
+Why This Is Enough
+
+Focus is on AI pipeline, not UI complexity
+
+Keeps the system fast and debuggable
+
+2. AI Personalisation Pipeline
+Model Choice: Instant-ID + Stable Diffusion XL
+Why Instant-ID
+
+I chose Instant-ID because:
+
+It preserves facial identity far better than vanilla Stable Diffusion
+
+Does not require training or fine-tuning
+
+Works well with a single input image
+
+Designed specifically for “put this face into another image”
+
+This is critical for children’s illustrations, where identity similarity matters more than realism.
+
+Pipeline Steps
+Step 1: Face Detection
+
+Use InsightFace (or similar)
+
+Detect face and extract facial embeddings
+
+Crop and align the face
+
+Why:
+
+Clean face embeddings give better identity transfer
+
+Reduces noise from background
+
+Step 2: Stylisation
+
+The detected face is passed through Instant-ID
+
+Prompt is written to match illustration style:
+
+Example:
+
+“Children’s storybook illustration, soft pastel colors, flat shading, friendly cartoon style”
+
+This ensures:
+
+The face matches the illustration’s art style
+
+Output does not look photorealistic or uncanny
+
+Step 3: Insertion into Illustration
+
+Two options (prototype uses Option A):
+
+Option A (Used):
+
+Generate the full image with the illustration prompt + face identity
+
+The model blends the face naturally into the illustration
+
+Option B (Future Improvement):
+
+Generate only the face
+
+Composite it into a fixed illustration template using masks
+
+3. Backend
+Tech Choice
+
+Python + FastAPI
+
+Why FastAPI
+
+Simple
+
+Async-friendly
+
+Easy integration with ML pipelines
+
+Clean API contracts
+
+Backend Responsibilities
+
+Accept uploaded image
+
+Run face detection
+
+Call the AI pipeline
+
+Store or return generated image
+
+Handle errors gracefully
+
+Sample Endpoint
+POST /generate
+Content-Type: multipart/form-data
+
+
+Response:
+
+{
+  "image_url": "https://..."
+}
+
+4. Deployment
+Backend
+
+Deployed on Replicate / AWS / GPU-enabled cloud
+
+Reason: Stable Diffusion + Instant-ID require GPU
+
+Frontend
+
+Deployed on Vercel
+
+Lightweight and fast
+
+Architecture Diagram (Textual)
+[ Browser ]
+    |
+    | Upload Photo
+    v
+[ Next.js UI ]
+    |
+    | POST /generate
+    v
+[ FastAPI Backend ]
+    |
+    | Face Detection
+    | Identity Embedding
+    v
+[ Instant-ID + SDXL ]
+    |
+    | Stylised Face
+    v
+[ Image Composition ]
+    |
+    v
+[ Final Illustration ]
+
+
+(A hand-drawn version can mirror this flow.)
+
+Limitations Faced
+
+Style Consistency
+
+Some illustration styles are harder to match
+
+Requires careful prompt tuning
+
+Face Angles
+
+Extreme side profiles reduce identity accuracy
+
+Performance
+
+Image generation takes ~10–15 seconds on GPU
+
+Not instant for production use
+
+Lighting Mismatch
+
+Photo lighting can influence output slightly
+
+What I’d Improve in V2
+
+Template-Based Illustrations
+
+Predefined character bodies
+
+Only swap faces → more consistency
+
+Better Face Masking
+
+Explicit facial segmentation
+
+Cleaner blending into illustration
+
+Queue System
+
+Background jobs for scalability
+
+Multiple Styles
+
+Let users choose illustration style (cartoon, watercolor, sketch)
+
+Safety Filters
+
+Child-specific image moderation
+
+Prevent misuse
+
+Why This Solution Works Well
+
+Preserves identity without training
+
+Matches illustration aesthetics
+
+Simple, explainable pipeline
+
+Deployable and extensible
+
+Demonstrates real-world AI product thinking
+
+Final Note
+
+This prototype focuses on correct model choice, clean architecture, and explainability rather than overengineering.
+Every decision is intentional and defensible in a technical review.
